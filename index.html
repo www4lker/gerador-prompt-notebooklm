@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Prompts para NotebookLM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            color: #202124;
+            padding: 2rem 1rem;
+        }
+        
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #202124;
+            letter-spacing: -0.5px;
+        }
+        
+        .header p {
+            font-size: 0.95rem;
+            color: #5f6368;
+            font-weight: 400;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+            margin-bottom: 1.5rem;
+            transition: box-shadow 0.2s ease;
+        }
+        
+        .card:hover {
+            box-shadow: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
+        }
+        
+        .input-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #202124;
+            font-size: 0.9rem;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            background: #fff;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 4px rgba(26, 115, 232, 0.1);
+        }
+        
+        input::placeholder, textarea::placeholder {
+            color: #80868b;
+        }
+        
+        .templates-label {
+            display: block;
+            margin-bottom: 1rem;
+            font-weight: 500;
+            color: #202124;
+            font-size: 0.9rem;
+        }
+        
+        .templates {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .template-btn {
+            background: #f8f9fa;
+            border: 1px solid #dadce0;
+            padding: 1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            font-size: 0.9rem;
+            color: #202124;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .template-btn:hover {
+            background: #f1f3f4;
+            border-color: #1a73e8;
+            transform: translateY(-1px);
+        }
+        
+        .template-btn.active {
+            background: linear-gradient(135deg, #e8f0fe 0%, #d2e3fc 100%);
+            border-color: #1a73e8;
+            color: #1967d2;
+        }
+        
+        .template-btn span {
+            font-size: 1.3rem;
+        }
+        
+        .generate-btn {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 0.875rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+        }
+        
+        .generate-btn:hover {
+            background: #1765cc;
+            box-shadow: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
+        }
+        
+        .generate-btn:active {
+            background: #1557b0;
+        }
+        
+        .output-section {
+            margin-top: 1.5rem;
+        }
+        
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .output-header h3 {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #202124;
+        }
+        
+        .output-box {
+            background: #f8f9fa;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            padding: 1.25rem;
+            font-family: 'Roboto Mono', 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+            color: #202124;
+        }
+        
+        .copy-btn {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 0.625rem 1.25rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .copy-btn:hover {
+            background: #1765cc;
+        }
+        
+        .copy-btn.copied {
+            background: #1e8e3e;
+        }
+        
+        .char-count {
+            font-size: 0.8rem;
+            color: #5f6368;
+            margin-top: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            background: #f1f3f4;
+            border-radius: 6px;
+            display: inline-block;
+        }
+        
+        .warning {
+            color: #ea4335;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+            .templates {
+                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Gerador de Prompts para NotebookLM</h1>
+            <p>Crie prompts customizados para análise acadêmica, arqueologia conceitual e roteiros narrativos</p>
+        </div>
+        
+        <div class="card">
+            <div class="input-section">
+                <label for="reportType">Tipo de Relatório Desejado:</label>
+                <input type="text" id="reportType" placeholder="Descreva o tipo de análise que você precisa...">
+            </div>
+            
+            <div class="input-section">
+                <span class="templates-label">Templates Pré-definidos:</span>
+                <div class="templates">
+                    <div class="template-btn" onclick="selectTemplate('arquivo')">
+                        <span>📋</span> Arquivo de Referência
+                    </div>
+                    <div class="template-btn" onclick="selectTemplate('projeto')">
+                        <span>🎯</span> Síntese para Projeto
+                    </div>
+                    <div class="template-btn" onclick="selectTemplate('ensaio')">
+                        <span>✍️</span> Questões Ensaísticas
+                    </div>
+                    <div class="template-btn" onclick="selectTemplate('macrotemas')">
+                        <span>🗺️</span> Mapeador de Temas
+                    </div>
+                    <div class="template-btn" onclick="selectTemplate('lacunas')">
+                        <span>🔍</span> Análise de Lacunas
+                    </div>
+                    <div class="template-btn" onclick="selectTemplate('codificacao')">
+                        <span>🧬</span> Codificação Temática
+                    </div>
+                    <div class="template-btn" onclick="selectTemplate('arqueologia')">
+                        <span>🔬</span> Arqueologia Conceitual
+                    </div>
+                    <div class="template-btn" onclick="selectTemplate('podcast')">
+                        <span>🎙️</span> Roteiro Podcast
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-section">
+                <label for="customFocus">Foco Específico (opcional):</label>
+                <textarea id="customFocus" rows="3" placeholder="Descreva aspectos específicos que devem ser priorizados na análise..."></textarea>
+            </div>
+            
+            <button class="generate-btn" onclick="generatePrompt()">🚀 Gerar Prompt</button>
+        </div>
+        
+        <div class="card output-section" id="outputSection" style="display: none;">
+            <div class="output-header">
+                <h3>Prompt Gerado</h3>
+                <button class="copy-btn" onclick="copyToClipboard()">
+                    <span id="copyIcon">📋</span>
+                    <span id="copyText">Copiar</span>
+                </button>
+            </div>
+            <div class="output-box" id="promptOutput"></div>
+            <div class="char-count" id="charCount"></div>
+        </div>
+    </div>
+
+    <script>
+        let activeTemplate = null;
+        
+        const templates = {
+            'arquivo': 'arquivo de referência consultivo com citações ABNT e mapeamento epistemológico',
+            'projeto': 'síntese temática para desenvolvimento de pesquisa original',
+            'ensaio': 'extração de questões ensaísticas complexas e problematizações críticas',
+            'macrotemas': 'mapeamento de macrotemas com questões fundamentais para discussão aprofundada',
+            'lacunas': 'análise sistemática de lacunas metodológicas, teóricas e empíricas com questões de pesquisa derivadas',
+            'codificacao': 'análise temática com codificação rigorosa, identificação de padrões e triangulação de achados',
+            'arqueologia': 'arqueologia conceitual revelando pressupostos ocultos e mapeando interpretações alternativas plausíveis',
+            'podcast': 'roteiro modular para podcast em temporada com arquitetura narrativa e scripts implementáveis'
+        };
+        
+        function selectTemplate(type) {
+            document.querySelectorAll('.template-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.closest('.template-btn').classList.add('active');
+            document.getElementById('reportType').value = templates[type];
+            activeTemplate = type;
+        }
+        
+        function generatePrompt() {
+            const reportType = document.getElementById('reportType').value.trim();
+            const customFocus = document.getElementById('customFocus').value.trim();
+            
+            if (!reportType) {
+                alert('Por favor, especifique o tipo de relatório desejado.');
+                return;
+            }
+            
+            const basePrompt = `Analise as fontes fornecidas e produza um relatório customizado do tipo: **${reportType}**
+
+**ESTRUTURA ANALÍTICA**: Organize o relatório em seções funcionais adequadas ao objetivo especificado, priorizando elementos com maior relevância para o tipo de análise solicitada.
+
+**COMPONENTES INVESTIGATIVOS**: Para cada seção, implemente estratégias analíticas apropriadas:
+- Extração conceitual com preservação terminológica quando necessário
+- Mapeamento argumentativo identificando estrutura lógica e evidencial
+- Identificação de filiações epistemológicas e metodológicas
+- Sistematização de intersecções disciplinares e diálogos teóricos
+- Problematização de tensões internas e pontos cegos metodológicos
+
+**MODALIDADES DE SAÍDA**: Calibre o formato de apresentação conforme função pretendida:
+- Para consulta: ênfase em síntese, citações localizadas e referenciamento
+- Para projeto: foco em aplicabilidade, transferibilidade conceitual e agenda investigativa
+- Para ensaio: prioridade a problematizações, questões complexas e experimentos conceituais
+- Para estudo: mapeamento exaustivo, questões fundamentais e desenvolvimento argumentativo
+
+**RIGOR METODOLÓGICO**: Mantenha precisão factual, economia textual e adequação ao nível de especialização acadêmica de pós-graduação. Evite simplificações inadequadas e preserve complexidade conceitual necessária.
+
+**QUESTÕES ORIENTADORAS**: Formule questões analíticas derivadas do material que:
+- Exijam articulação de múltiplos aspectos identificados
+- Demandem posicionamento teórico fundamentado
+- Estimulem análise crítica de pressupostos
+- Impossibilitem resposta sintética ou binária
+
+**CONECTIVIDADE ACADÊMICA**: Identifique potencial de articulação com outros campos disciplinares, tradições teóricas correlatas e agenda de pesquisa contemporânea relevante ao tipo de relatório solicitado.`;
+
+            let finalPrompt = basePrompt;
+            
+            if (activeTemplate === 'lacunas') {
+                finalPrompt += `\n\n**ORIENTAÇÕES ESPECÍFICAS PARA ANÁLISE DE LACUNAS**:
+Identifique sistematicamente três categorias de lacunas:
+(a) **Metodológicas**: Ausências em abordagens, técnicas ou instrumentos de pesquisa
+(b) **Teóricas**: Gaps conceituais, frameworks não aplicados, diálogos teóricos ausentes
+(c) **Empíricas/Contextuais**: Populações não estudadas, contextos inexplorados, variáveis não consideradas
+
+Para cada lacuna identificada, forneça:
+1. Descrição sintética (uma frase)
+2. Exemplo de artigo/fonte que evidencia a lacuna
+3. Questão de pesquisa sugerida para endereçar a lacuna`;
+            } else if (activeTemplate === 'codificacao') {
+                finalPrompt += `\n\n**ORIENTAÇÕES ESPECÍFICAS PARA CODIFICAÇÃO TEMÁTICA**:
+Implemente processo analítico rigoroso em três etapas:
+
+1. **Codificação Inicial**: Gere códigos identificando padrões significativos e extraindo frases-chave dos dados. Preserve terminologia êmica quando apropriado.
+
+2. **Desenvolvimento Temático**: Agrupe códigos relacionados em temas abrangentes. Identifique hierarquias, relações e intersecções entre temas. Mapeie frequência e distribuição.
+
+3. **Triangulação e Validação**: 
+   - Verifique coerência, distinção e suporte empírico dos temas
+   - Identifique interpretações alternativas possíveis
+   - Sugira códigos/temas potencialmente não explicitados
+   - Sinalize tensões, contradições e casos desviantes
+
+Apresente análise em formato estruturado que facilite auditoria metodológica.`;
+            } else if (activeTemplate === 'arqueologia') {
+                finalPrompt += `\n\n**ORIENTAÇÕES ESPECÍFICAS PARA ARQUEOLOGIA CONCEITUAL**:
+
+Realize análise sistemática em QUATRO ETAPAS que revele pressupostos ocultos e desenvolva interpretações alternativas:
+
+**1. CONTEXTUALIZAÇÃO DA ANÁLISE**
+Estabeleça panorama da crença/interpretação a ser examinada, explicando por que vale investigar seus pressupostos e que insights podem emergir dessa arqueologia conceitual.
+
+**2. ARQUEOLOGIA DE PRESSUPOSTOS OCULTOS**
+Para cada pressuposto identificado nas fontes, desenvolva análise detalhada explicando:
+- Como ele se manifesta na crença/interpretação original
+- Por que pode não ser imediatamente aparente
+- Que tradições teóricas, contextos culturais ou paradigmas disciplinares influenciam
+- Que questões esse pressuposto resolve ou evita confrontar
+- Como pressupostos alternativos levariam a conclusões diferentes
+
+Construa compreensão progressiva: dos pressupostos mais evidentes aos mais sutis.
+
+**3. CARTOGRAFIA DE INTERPRETAÇÕES ALTERNATIVAS**
+Para cada interpretação alternativa plausível, explore:
+- Como reframe/reconceptualiza o fenômeno
+- Que pressupostos diferentes adota e por quê
+- Que evidências privilegia sobre outras
+- Como mudaria nossa compreensão se adotássemos essa perspectiva
+- Que insights únicos emergem dessa abordagem
+
+Use pedagogia comparativa mostrando relações entre alternativas.
+
+**4. SÍNTESE REFLEXIVA**
+Integre insights demonstrando como multiplicidade de perspectivas enriquece compreensão. Explique que tipo de compreensão mais nuançada emerge dessa exploração multi-perspectiva.
+
+**DIRETRIZES METODOLÓGICAS**:
+- Neutralidade analítica: examine sem julgar como correto/incorreto
+- Imaginação disciplinada: gere alternativas plausíveis, não especulações arbitrárias
+- Pedagogia progressiva: construa do simples ao complexo
+- Contextualização cultural: considere diferentes contextos históricos/culturais
+- Rigor comparativo: mostre claramente diferenças entre perspectivas`;
+            } else if (activeTemplate === 'podcast') {
+                finalPrompt += `\n\n**ORIENTAÇÕES ESPECÍFICAS PARA ROTEIRO DE PODCAST MODULAR**:
+
+Transforme as fontes em roteiro modular para podcast organizado por TEMPORADA HOMOGÊNEA.
+
+**ETAPA 1: ANÁLISE DA TEMPORADA**
+Determine os seguintes parâmetros:
+- **Modo**: Análise Aprofundada (material denso/filosófico) OU Crítica (argumentos questionáveis/inconsistências) OU Debate (tema controverso/posições conflitantes)
+- **Densidade Conceitual**: Alta/Média/Baixa
+- **Leitmotiv Central**: Fio condutor de toda temporada
+- **Arquitetura**: 3 atos + epílogo
+
+**ETAPA 2: ESTRUTURA MODULAR (4 MÓDULOS TOTAIS)**
+
+Para cada módulo, forneça estrutura completa com LIMITE MÁXIMO 5.000 CARACTERES:
+
+**MÓDULO [N] - [TÍTULO ESPECÍFICO]**
+
+CONTEXTO DA TEMPORADA (máx 300 chars): Resumo ultraconciso da arquitetura e posição deste módulo
+
+FUNÇÃO NARRATIVA (máx 150 chars): Ato I/II/III ou Epílogo + função específica
+
+PERGUNTA-GUIA (máx 200 chars): Questão central do módulo
+
+SCRIPT ABERTURA (máx 400 chars): Bem-vindos ao módulo [N]. [Contexto mínimo essencial]. Hoje exploramos [tema específico].
+
+OBJETIVO DO MÓDULO (máx 200 chars): O que o ouvinte deve compreender
+
+DESENVOLVIMENTO (máx 2.500 chars - NÚCLEO PRINCIPAL):
+• Ponto conceitual 1: essência em 1-2 frases
+• Ponto conceitual 2: desenvolvimento mínimo essencial
+• Ponto conceitual 3: conexão direta
+
+SCRIPT MENÇÃO FONTE (máx 300 chars): Como [autor] argumenta em [obra]: [conceito-chave direto].
+
+CONEXÕES INTERDISCIPLINARES (máx 250 chars): Relação essencial com outras áreas
+
+RECAPITULAÇÃO (máx 300 chars): Síntese ultraconcisa do módulo
+
+SCRIPT TRANSIÇÃO (máx 250 chars): Próximo módulo: [tema específico pendente].
+
+VALIDAÇÃO (máx 200 chars): Tarefa observável específica
+
+PREPARAÇÃO PRÓXIMO MÓDULO (máx 250 chars): Conceitos-chave e tensão pendente
+
+**DIRETRIZES CRÍTICAS**:
+- NUNCA exceder 5.000 caracteres por módulo
+- Linguagem direta e objetiva (máx 2 frases por script)
+- Apenas 3 pontos conceituais no DESENVOLVIMENTO
+- Eliminar exemplos redundantes
+- Scripts implementáveis diretamente no NotebookLM
+- Todo conteúdo em português brasileiro
+- Progressão narrativa coerente entre módulos
+- Cada módulo deve ser autocontido (sem memória entre gerações)`;
+            }
+            
+            if (customFocus) {
+                finalPrompt += `\n\n**FOCO ESPECÍFICO**: ${customFocus}`;
+            }
+            
+            finalPrompt += `\n\nAdapte automaticamente profundidade analítica, ênfases conceituais e modalidade de apresentação conforme especificações do relatório solicitado.`;
+            
+            document.getElementById('promptOutput').textContent = finalPrompt;
+            
+            const charCount = finalPrompt.length;
+            const countElement = document.getElementById('charCount');
+            
+            if (charCount > 5000) {
+                countElement.innerHTML = `<span class="warning">${charCount} caracteres (excede limite NotebookLM: 5000)</span>`;
+            } else {
+                countElement.innerHTML = `${charCount} caracteres (limite NotebookLM: 5000)`;
+            }
+            
+            document.getElementById('outputSection').style.display = 'block';
+            document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        
+        function copyToClipboard() {
+            const promptText = document.getElementById('promptOutput').textContent;
+            navigator.clipboard.writeText(promptText).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                const icon = document.getElementById('copyIcon');
+                const text = document.getElementById('copyText');
+                
+                btn.classList.add('copied');
+                icon.textContent = '✓';
+                text.textContent = 'Copiado!';
+                
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    icon.textContent = '📋';
+                    text.textContent = 'Copiar';
+                }, 2000);
+            }).catch(() => {
+                alert('Erro ao copiar. Selecione e copie manualmente o texto.');
+            });
+        }
+    </script>
+</body>
+</html>
